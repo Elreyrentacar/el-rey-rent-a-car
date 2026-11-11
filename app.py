@@ -1,5 +1,6 @@
 import streamlit as st
 import sqlite3, math, io, os
+from supabase import create_client
 from datetime import datetime, date, time, timedelta
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
