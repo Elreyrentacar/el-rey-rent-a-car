@@ -14,15 +14,17 @@ from xml.sax.saxutils import escape
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 LOGO_PATH = os.path.join(APP_DIR, "assets", "logo.png")
 
+
 @st.cache_resource
 def supabase_db():
     try:
         cfg = st.secrets["supabase"]
-       st.write("URL configurada:", repr(cfg["url"]))
+        st.write("URL configurada:", repr(cfg["url"]))
         return create_client(cfg["url"], cfg["key"])
     except Exception as exc:
-        st.error("No se pudo configurar Supabase. Revisa Settings → Secrets.")
+        st.error(f"No se pudo configurar Supabase: {exc}")
         st.stop()
+
 
 def query(table, columns="*", order=None, desc=False, limit=None):
     q = supabase_db().table(table).select(columns)
