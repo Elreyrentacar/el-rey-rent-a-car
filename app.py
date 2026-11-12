@@ -12,8 +12,7 @@ from reportlab.lib.units import inch
 from xml.sax.saxutils import escape
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-LOGO_PATH = os.path.join(APP_DIR, "assets", "logo.png")
-
+LOGO_PATH = os.path.join(APP_DIR, "assets", "IMG-20261109-WA0034.jpg")
 
 @st.cache_resource
 def supabase_db():
