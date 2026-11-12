@@ -1,5 +1,5 @@
 import runpy
-runpy.run_path("app_premium_diseno_nuevo (1).py", run_name="__main__")
+runpy.run_path("app_premium_pdf_una_pagina(1).py", run_name="__main__")
 raise SystemExit
 import streamlit as st
 import math, io, os
