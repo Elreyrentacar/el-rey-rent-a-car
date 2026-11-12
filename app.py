@@ -1,5 +1,7 @@
 import runpy
-runpy.run_path("el_rey_con_comprobantes(1).py", run_name="__main__")
+
+runpy.run_path("el_rey_comprobantes_premium_actualizado.py", run_name="__main__")
+
 raise SystemExit
 import streamlit as st
 import math, io, os
