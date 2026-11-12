@@ -13,6 +13,10 @@ from xml.sax.saxutils import escape
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 LOGO_PATH = os.path.join(APP_DIR, "assets", "file_0000000041ac81f5802486e44686db31.png")
+LOGO_NAVIDAD = os.path.join(APP_DIR, "assets", "logo_navidad.png")
+
+if "logo_temporada" not in st.session_state:
+    st.session_state.logo_temporada = "Normal"
 @st.cache_resource
 def supabase_db():
     try:
