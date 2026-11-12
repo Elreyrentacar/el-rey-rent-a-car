@@ -35,9 +35,22 @@ def query(table, columns="*", order=None, desc=False, limit=None):
 def safe_float(x):
     return float(x or 0)
 
+
 def show_error(exc):
-    st.error("No se pudo guardar o consultar la información en Supabase. Comprueba que ejecutaste el archivo SQL y que la clave es correcta.")
-    st.caption(str(exc))
+    mensaje = str(exc)
+    if "23P01" in mensaje or "rey_reservas_sin_duplicados" in mensaje:
+        st.error(
+            "⛔ Este vehículo ya tiene una reserva confirmada "
+            "en las fechas seleccionadas. Elige otro vehículo "
+            "o cambia las fechas."
+        )
+    else:
+        st.error(
+            "No se pudo completar la operación. "
+            "Verifica la conexión con la base de datos."
+        )
+        st.caption(mensaje)
+
 
 I18N = {
     "Español": {
