@@ -1,3 +1,6 @@
+import runpy
+runpy.run_path("app_premium.py", run_name="__main__")
+raise SystemExit
 import streamlit as st
 import math, io, os
 from datetime import datetime, date, time, timedelta
