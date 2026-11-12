@@ -145,7 +145,7 @@ def pdf_quote(r):
 st.set_page_config(page_title="EL REY RENT A CAR", page_icon="🚘", layout="wide")
 st.markdown("""<style>.stApp{background:#f5f6f8}[data-testid="stSidebar"]{background:#101116}[data-testid="stSidebar"] *{color:#fff}h1,h2,h3{color:#15171d}</style>""", unsafe_allow_html=True)
 with st.sidebar:
-    if os.path.exists(LOGO_PATH): st.image(LOGO_PATH, width=220)
+    if os.path.exists(LOGO_PATH): st.image(LOGO_PATH, width=320)
     st.title("EL REY RENT A CAR")
     st.caption("COSTA RICA · PANEL ADMINISTRATIVO")
     page = st.radio("MENÚ", ["Inicio", "Nueva cotización", "Devoluciones", "Vehículos y tarifas", "Historial", "Configuración"])
