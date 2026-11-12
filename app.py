@@ -18,6 +18,7 @@ LOGO_PATH = os.path.join(APP_DIR, "assets", "logo.png")
 def supabase_db():
     try:
         cfg = st.secrets["supabase"]
+       st.write("URL configurada:", repr(cfg["url"]))
         return create_client(cfg["url"], cfg["key"])
     except Exception as exc:
         st.error("No se pudo configurar Supabase. Revisa Settings → Secrets.")
