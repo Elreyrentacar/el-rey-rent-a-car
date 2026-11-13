@@ -84,7 +84,7 @@ if st.sidebar.button("🚪 Cerrar sesión"):
     st.rerun()
 
 runpy.run_path(
-    "el_rey_contratos_dos_firmas.py",
+    "el_rey_contratos_firmas_corregidas.py",
     run_name="__main__"
 )
 
