@@ -2,7 +2,7 @@
 import runpy
 import streamlit as st
 from supabase import create_client
-
+import time
 # Conexion para autenticar usuarios
 cfg = st.secrets["supabase"]
 auth = create_client(cfg["url"], cfg["key"])
@@ -12,6 +12,24 @@ ADMIN_EMAIL = "elreyadministracionrent@gmail.com"
 
 if "admin_autenticado" not in st.session_state:
     st.session_state.admin_autenticado = False
+if "ultima_actividad" not in st.session_state:
+    st.session_state.ultima_actividad = time.time()
+
+TIEMPO_LIMITE = 30 * 60
+
+if st.session_state.admin_autenticado:
+    tiempo_transcurrido = time.time() - st.session_state.ultima_actividad
+
+    if tiempo_transcurrido >= TIEMPO_LIMITE:
+        st.session_state.admin_autenticado = False
+        st.session_state.pop("admin_uid", None)
+        try:
+            auth.auth.sign_out()
+        except Exception:
+            pass
+        st.warning("🔒 Tu sesión expiró por inactividad.")
+        st.rerun()
+
 
 if not st.session_state.admin_autenticado:
     st.title("🔐 EL REY RENT A CAR")
@@ -37,6 +55,7 @@ if not st.session_state.admin_autenticado:
                 and usuario.email.lower() == ADMIN_EMAIL.lower()
             ):
                 st.session_state.admin_autenticado = True
+                st.session_state.ultima_actividad = time.time()
                 st.session_state.admin_uid = usuario.id
                 st.rerun()
             else:
@@ -46,6 +65,7 @@ if not st.session_state.admin_autenticado:
             st.error("Correo o contraseña incorrectos.")
 
     st.stop()
+
 
 st.sidebar.success("🔐 Administrador principal")
 
