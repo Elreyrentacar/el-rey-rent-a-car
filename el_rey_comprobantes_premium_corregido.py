@@ -435,6 +435,158 @@ def crear_comprobante_reserva(reserva, idioma="Español", abono=0.0):
     doc.build(story)
     return buf.getvalue()
 
+
+
+# ─── CONTRATOS DE ALQUILER (módulo integrado) ──────────────────────────
+def crear_contrato_pdf(reserva, idioma="Español", firma_bytes=None,
+                       conductor="", identificacion="", licencia="",
+                       deposito=0.0, seguro="Según acuerdo", condiciones=""):
+    """Genera contrato imprimible o con imagen de firma, sin alterar Supabase."""
+    from reportlab.lib.utils import ImageReader
+    from reportlab.platypus import KeepTogether
+    textos = {
+        "Español": ["CONTRATO DE ALQUILER DE VEHÍCULO", "Contrato asociado a reserva", "DATOS DEL CLIENTE Y CONDUCTOR", "Cliente", "Conductor", "Identificación / pasaporte", "Licencia de conducir", "Teléfono", "Correo", "DATOS DEL VEHÍCULO Y ALQUILER", "Vehículo", "Recogida", "Devolución pactada", "Lugar de recogida", "Lugar de devolución", "Tarifa diaria", "Total estimado", "Depósito de garantía (separado)", "Seguro", "CONDICIONES GENERALES", "El cliente se compromete a devolver el vehículo en la fecha y hora acordadas y en condiciones conformes al acta de entrega.", "No hay horas de cortesía: cualquier devolución posterior a la hora pactada genera el cobro de un día adicional completo por cada período de hasta 24 horas de retraso.", "Los daños, combustible, multas, deducibles y demás cargos se regirán por las condiciones y coberturas expresamente acordadas y la legislación aplicable.", "Este documento debe revisarse y completarse antes de su firma; la reserva y la cotización no sustituyen la entrega efectiva del vehículo.", "Firma del cliente", "Firma del representante", "Fecha", "Condiciones adicionales"],
+        "English": ["VEHICLE RENTAL AGREEMENT", "Agreement linked to booking", "CUSTOMER AND DRIVER", "Customer", "Driver", "ID / passport", "Driver's license", "Phone", "Email", "VEHICLE AND RENTAL DETAILS", "Vehicle", "Pick-up", "Agreed return", "Pick-up location", "Return location", "Daily rate", "Estimated total", "Security deposit (separate)", "Insurance", "GENERAL TERMS", "The customer agrees to return the vehicle at the agreed date and time and in accordance with the vehicle handover record.", "No grace period applies: any return after the agreed time incurs an additional full-day charge for each period of up to 24 hours of delay.", "Damage, fuel, fines, deductibles and other charges are governed by the expressly agreed terms and coverages and applicable law.", "This document must be reviewed and completed before signing; the booking and quotation do not replace actual vehicle handover.", "Customer signature", "Company representative signature", "Date", "Additional terms"],
+        "Português": ["CONTRATO DE ALUGUEL DE VEÍCULO", "Contrato vinculado à reserva", "CLIENTE E CONDUTOR", "Cliente", "Condutor", "Documento / passaporte", "Carteira de habilitação", "Telefone", "E-mail", "VEÍCULO E LOCAÇÃO", "Veículo", "Retirada", "Devolução combinada", "Local de retirada", "Local de devolução", "Tarifa diária", "Total estimado", "Depósito de garantia (separado)", "Seguro", "CONDIÇÕES GERAIS", "O cliente concorda em devolver o veículo na data e hora combinadas e conforme o registro de entrega.", "Não há tolerância: qualquer devolução após o horário combinado gera cobrança de um dia adicional completo por cada período de até 24 horas de atraso.", "Danos, combustível, multas, franquias e outras cobranças seguem as condições e coberturas expressamente acordadas e a legislação aplicável.", "Este documento deve ser revisado e preenchido antes da assinatura; a reserva e a cotação não substituem a entrega efetiva do veículo.", "Assinatura do cliente", "Assinatura do representante", "Data", "Condições adicionais"],
+        "Français": ["CONTRAT DE LOCATION DE VÉHICULE", "Contrat lié à la réservation", "CLIENT ET CONDUCTEUR", "Client", "Conducteur", "Pièce d'identité / passeport", "Permis de conduire", "Téléphone", "E-mail", "VÉHICULE ET LOCATION", "Véhicule", "Prise en charge", "Retour convenu", "Lieu de prise en charge", "Lieu de retour", "Tarif journalier", "Total estimé", "Dépôt de garantie (séparé)", "Assurance", "CONDITIONS GÉNÉRALES", "Le client s'engage à restituer le véhicule à la date et à l'heure convenues, conformément à l'état des lieux de remise.", "Aucun délai de grâce : tout retour après l'heure convenue entraîne la facturation d'une journée entière supplémentaire pour chaque période de retard allant jusqu'à 24 heures.", "Les dommages, le carburant, les amendes, les franchises et autres frais sont régis par les conditions et garanties expressément convenues et la législation applicable.", "Ce document doit être relu et complété avant signature ; la réservation et le devis ne remplacent pas la remise effective du véhicule.", "Signature du client", "Signature du représentant", "Date", "Conditions supplémentaires"],
+    }
+    t = textos[idioma]
+    buf = io.BytesIO()
+    navy = colors.HexColor("#14223B")
+    red = colors.HexColor("#C52F43")
+    pale = colors.HexColor("#F3F6FA")
+    styles = getSampleStyleSheet()
+    for name, font, size, leading, color in [
+        ("ContractTitle", "Helvetica-Bold", 13, 17, navy),
+        ("ContractHead", "Helvetica-Bold", 9, 12, red),
+        ("ContractLabel", "Helvetica-Bold", 8, 11, navy),
+        ("ContractText", "Helvetica", 8.2, 12, navy),
+        ("ContractSmall", "Helvetica", 7.5, 11, navy),
+    ]:
+        styles.add(ParagraphStyle(name=name, fontName=font, fontSize=size,
+                                  leading=leading, textColor=color, spaceAfter=3))
+    def par(x, sty="ContractText"):
+        return Paragraph(escape(str(x if x not in (None, "") else "—")), styles[sty])
+    def heading(x):
+        return par(x, "ContractHead")
+    def table(rows):
+        tab = Table([[par(k,"ContractLabel"),par(v)] for k,v in rows],
+                    colWidths=[2.15*inch, 5.1*inch], repeatRows=0)
+        tab.setStyle(TableStyle([
+            ("ROWBACKGROUNDS",(0,0),(-1,-1),[pale,colors.white]),
+            ("VALIGN",(0,0),(-1,-1),"TOP"),
+            ("LEFTPADDING",(0,0),(-1,-1),9),
+            ("RIGHTPADDING",(0,0),(-1,-1),9),
+            ("TOPPADDING",(0,0),(-1,-1),4),
+            ("BOTTOMPADDING",(0,0),(-1,-1),4),
+        ]))
+        return tab
+    story=[]
+    if os.path.isfile(LOGO_PATH):
+        try:
+            w,h=ImageReader(LOGO_PATH).getSize()
+            ratio=min(1.15*inch/w,0.68*inch/h)
+            img=Image(LOGO_PATH,width=w*ratio,height=h*ratio)
+            img.hAlign="CENTER"
+            story.append(img)
+        except Exception:
+            pass
+    story += [par("EL REY RENT A CAR · COSTA RICA", "ContractTitle"),
+              heading(t[0]), par(f'{t[1]} #{reserva["id"]}'), Spacer(1,8),
+              heading(t[2]), table([
+                  (t[3],reserva.get("cliente")),
+                  (t[4],conductor or reserva.get("cliente")),
+                  (t[5],identificacion), (t[6],licencia),
+                  (t[7],reserva.get("telefono")),(t[8],reserva.get("correo"))]),
+              Spacer(1,9), heading(t[9]), table([
+                  (t[10],reserva.get("vehiculo")),
+                  (t[11],str(reserva.get("inicio",""))[:16].replace("T"," ")),
+                  (t[12],str(reserva.get("fin",""))[:16].replace("T"," ")),
+                  (t[13],reserva.get("lugar_recogida")),
+                  (t[14],reserva.get("lugar_devolucion")),
+                  (t[15],money(safe_float(reserva.get("tarifa_diaria")))),
+                  (t[16],money(safe_float(reserva.get("total")))),
+                  (t[17],money(deposito)),(t[18],seguro)]),
+              Spacer(1,9),heading(t[19])]
+    for clause in t[20:24]:
+        story.append(par("• " + clause,"ContractSmall"))
+    if condiciones.strip():
+        story += [heading(t[27]),par(condiciones,"ContractSmall")]
+    story.append(Spacer(1,14))
+    if firma_bytes:
+        try:
+            img=Image(io.BytesIO(firma_bytes),width=2.35*inch,height=.85*inch,kind="proportional")
+            story.append(img)
+        except Exception:
+            story.append(par("[Firma no legible]"))
+    else:
+        story.append(Spacer(1,35))
+    sig=Table([[par(t[24],"ContractLabel"),par(t[25],"ContractLabel")],
+               [par("____________________________"),par("____________________________")],
+               [par(t[26]+": __________________"),par(t[26]+": __________________")]],
+              colWidths=[3.625*inch,3.625*inch])
+    sig.setStyle(TableStyle([("VALIGN",(0,0),(-1,-1),"TOP"),
+                             ("TOPPADDING",(0,0),(-1,-1),4)]))
+    story.append(KeepTogether(sig))
+    doc=SimpleDocTemplate(buf,pagesize=letter,leftMargin=45,rightMargin=45,
+                          topMargin=28,bottomMargin=30,
+                          title=f'EL REY RENT A CAR - Contrato #{reserva["id"]}')
+    doc.build(story)
+    return buf.getvalue()
+
+
+def pantalla_contratos():
+    st.subheader("📑 Contratos de alquiler")
+    st.caption("Genera contratos en cuatro idiomas, para firma en papel o con una firma dibujada.")
+    reservas = query("rey_reservas", order="id", desc=True)
+    validas = [r for r in reservas if str(r.get("estado") or "").lower() in ("confirmada","en curso","finalizada")]
+    if not validas:
+        st.info("Primero confirma una reserva en el menú Reservas para preparar su contrato.")
+        return
+    opciones = {f'#{r["id"]} · {r["cliente"]} · {r["vehiculo"]}':r for r in validas}
+    reserva = opciones[st.selectbox("Reserva para el contrato",list(opciones))]
+    idioma = st.selectbox("🌎 Idioma del contrato",["Español","English","Português","Français"])
+    conductor = st.text_input("Nombre completo del conductor",value=reserva.get("cliente") or "")
+    identificacion = st.text_input("Identificación o pasaporte")
+    licencia = st.text_input("Número de licencia de conducir")
+    deposito = st.number_input("Depósito de garantía (USD)",min_value=0.0,value=0.0)
+    seguro = st.text_input("Seguro y cobertura acordada",value="Según acuerdo")
+    condiciones = st.text_area("Condiciones adicionales acordadas (opcional)")
+    modo = st.radio("Tipo de firma",["🖨️ Imprimir y firmar en papel","✍️ Firma dibujada desde el celular"])
+    firma_bytes = None
+    if modo.startswith("✍️"):
+        st.info("Dibuja tu firma con el dedo. Si el panel de dibujo no está disponible, puedes subir una imagen PNG de la firma.")
+        try:
+            from streamlit_drawable_canvas import st_canvas
+            resultado = st_canvas(fill_color="rgba(255,255,255,1)",stroke_width=3,
+                                  stroke_color="#14223B",background_color="#FFFFFF",
+                                  height=170,width=320,drawing_mode="freedraw",
+                                  key=f'firma_contrato_{reserva["id"]}')
+            if resultado.image_data is not None and resultado.json_data and resultado.json_data.get("objects"):
+                from PIL import Image as PILImage
+                imagen=PILImage.fromarray(resultado.image_data.astype("uint8"))
+                firma_buf=io.BytesIO()
+                imagen.save(firma_buf,format="PNG")
+                firma_bytes=firma_buf.getvalue()
+        except (ImportError, Exception) as exc:
+            st.caption("El dibujo integrado no está disponible en este despliegue.")
+        subida=st.file_uploader("O subir imagen de firma (PNG o JPG)",type=["png","jpg","jpeg"])
+        if subida is not None:
+            firma_bytes=subida.getvalue()
+    st.warning("Revisa los datos, las coberturas y las condiciones con el cliente antes de firmar. Este es un modelo operativo, no una revisión legal.")
+    if modo.startswith("✍️") and not firma_bytes:
+        st.warning("Para generar un contrato con firma digital, primero dibuja o sube una firma.")
+    else:
+        try:
+            pdf=crear_contrato_pdf(reserva,idioma,firma_bytes,conductor,
+                                   identificacion,licencia,deposito,seguro,condiciones)
+            st.download_button("📄 Descargar contrato PDF",data=pdf,
+                               file_name=f'El_Rey_Contrato_Reserva_{reserva["id"]}.pdf',
+                               mime="application/pdf",type="primary")
+        except Exception as exc:
+            st.error(f"No se pudo generar el contrato PDF: {exc}")
+    st.caption("Los contratos se pueden regenerar desde las reservas guardadas. Las firmas y los datos adicionales de este formulario todavía no se almacenan en Supabase: descarga y conserva el PDF firmado.")
+
 st.set_page_config(page_title="EL REY RENT A CAR", page_icon="🚘", layout="wide")
 st.markdown("""<style>
 .stApp {background:#F4F6FA;color:#152033}
@@ -456,7 +608,7 @@ with st.sidebar:
         st.image(logo_actual, width=220)
     st.title("EL REY RENT A CAR")
     st.caption("COSTA RICA · PANEL ADMINISTRATIVO")
-    page = st.radio("MENÚ", ["Inicio", "Nueva cotización", "Reservas", "Devoluciones", "Vehículos y tarifas", "Historial"])
+    page = st.radio("MENÚ", ["Inicio", "Nueva cotización", "Reservas", "Devoluciones", "Vehículos y tarifas", "Historial", "Contratos"])
 
 if page != "Inicio":
     st.title("👑 EL REY RENT A CAR")
@@ -855,6 +1007,8 @@ try:
                 supabase_db().table("rey_cotizaciones").update(dict(devolucion_real=real.strftime("%Y-%m-%d %H:%M"),dias_extra=extra,recargo=cargo,total=safe_float(q["subtotal"])+cargo)).eq("id",q["id"]).execute()
                 st.success(f'Recargo guardado: {money(cargo,q["moneda"])} · {extra} día(s) extra')
                 st.rerun()
+    elif page == "Contratos":
+        pantalla_contratos()
     elif page == "Historial":
         st.subheader("📚 Historial de cotizaciones")
         rows=query("rey_cotizaciones",order="id",desc=True)
