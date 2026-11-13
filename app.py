@@ -34,7 +34,9 @@ if st.session_state.admin_autenticado:
 if not st.session_state.admin_autenticado:
     st.title("🔐 EL REY RENT A CAR")
     st.subheader("Acceso administrativo")
-
+    if st.session_state.pop("login_limpio", False):
+        st.session_state["login_correo"] = ""
+        st.session_state["login_clave"] = ""
     with st.form("login"):
         correo = st.text_input("Correo electrónico", key="login_correo")
         clave = st.text_input("Contraseña", type="password", key="login_clave")
@@ -72,6 +74,7 @@ st.sidebar.success("🔐 Administrador principal")
 if st.sidebar.button("🚪 Cerrar sesión"):
     st.session_state.pop("login_correo", None)
     st.session_state.pop("login_clave", None)
+    st.session_state["login_limpio"] = True
     st.session_state.admin_autenticado = False
     st.session_state.pop("admin_uid", None)
     try:
