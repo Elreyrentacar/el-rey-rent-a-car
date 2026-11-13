@@ -36,8 +36,8 @@ if not st.session_state.admin_autenticado:
     st.subheader("Acceso administrativo")
 
     with st.form("login"):
-        correo = st.text_input("Correo electrónico")
-        clave = st.text_input("Contraseña", type="password")
+        correo = st.text_input("Correo electrónico", key="login_correo")
+        clave = st.text_input("Contraseña", type="password", key="login_clave")
         ingresar = st.form_submit_button("Iniciar sesión")
 
     if ingresar:
