@@ -70,6 +70,8 @@ if not st.session_state.admin_autenticado:
 st.sidebar.success("🔐 Administrador principal")
 
 if st.sidebar.button("🚪 Cerrar sesión"):
+    st.session_state.pop("login_correo", None)
+    st.session_state.pop("login_clave", None)
     st.session_state.admin_autenticado = False
     st.session_state.pop("admin_uid", None)
     try:
