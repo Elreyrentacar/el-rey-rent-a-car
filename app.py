@@ -1,8 +1,70 @@
-import runpy
 
-runpy.run_path("el_rey_comprobantes_premium_actualizado.py", run_name="__main__")
+import runpy
+import streamlit as st
+from supabase import create_client
+
+# Conexion para autenticar usuarios
+cfg = st.secrets["supabase"]
+auth = create_client(cfg["url"], cfg["key"])
+
+# Administrador principal autorizado
+ADMIN_EMAIL = "elreyadministracionrent@gmail.com"
+
+if "admin_autenticado" not in st.session_state:
+    st.session_state.admin_autenticado = False
+
+if not st.session_state.admin_autenticado:
+    st.title("🔐 EL REY RENT A CAR")
+    st.subheader("Acceso administrativo")
+
+    with st.form("login"):
+        correo = st.text_input("Correo electrónico")
+        clave = st.text_input("Contraseña", type="password")
+        ingresar = st.form_submit_button("Iniciar sesión")
+
+    if ingresar:
+        try:
+            resultado = auth.auth.sign_in_with_password({
+                "email": correo.strip(),
+                "password": clave
+            })
+
+            usuario = resultado.user
+
+            if (
+                usuario
+                and usuario.email
+                and usuario.email.lower() == ADMIN_EMAIL.lower()
+            ):
+                st.session_state.admin_autenticado = True
+                st.session_state.admin_uid = usuario.id
+                st.rerun()
+            else:
+                st.error("Esta cuenta no tiene acceso administrativo.")
+
+        except Exception:
+            st.error("Correo o contraseña incorrectos.")
+
+    st.stop()
+
+st.sidebar.success("🔐 Administrador principal")
+
+if st.sidebar.button("🚪 Cerrar sesión"):
+    st.session_state.admin_autenticado = False
+    st.session_state.pop("admin_uid", None)
+    try:
+        auth.auth.sign_out()
+    except Exception:
+        pass
+    st.rerun()
+
+runpy.run_path(
+    "el_rey_comprobantes_premium_actualizado.py",
+    run_name="__main__"
+)
 
 raise SystemExit
+
 import streamlit as st
 import math, io, os
 from datetime import datetime, date, time, timedelta
