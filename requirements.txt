@@ -2,3 +2,4 @@ streamlit>=1.36
 reportlab>=4.0
 pillow>=10.0
 supabase
+streamlit-drawable-canvas
