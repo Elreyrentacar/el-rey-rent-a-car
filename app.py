@@ -84,7 +84,7 @@ if st.sidebar.button("🚪 Cerrar sesión"):
     st.rerun()
 
 runpy.run_path(
-    "el_rey_comprobantes_premium_mejorado.py",
+    "el_rey_comprobantes_premium_corregido.py",
     run_name="__main__"
 )
 
