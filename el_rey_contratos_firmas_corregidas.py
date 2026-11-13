@@ -578,6 +578,7 @@ def pantalla_contratos():
                     stroke_width=3, stroke_color="#14223B",
                     background_color="#FFFFFF", height=170,
                     width=320, drawing_mode="freedraw",
+                    return_image_data=True,
                     key=f"{clave}_{reserva['id']}"
                 )
                 if resultado is not None and resultado.image_data is not None:
