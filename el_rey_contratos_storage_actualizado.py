@@ -515,18 +515,41 @@ def crear_contrato_pdf(reserva, idioma="Español", firma_bytes=None,
         story += [heading(t[27]),par(condiciones,"ContractSmall")]
     story.append(Spacer(1,14))
     def firma_celda(datos):
+        """Ajusta la firma al PDF recortando el espacio vacío del lienzo.
+
+        El dibujo original permanece intacto en memoria y en Supabase;
+        solo se prepara una copia para mostrarla en el contrato.
+        """
         if not datos:
             return Spacer(1, 38)
         try:
             from PIL import Image as PILImage
-            foto = PILImage.open(io.BytesIO(datos))
-            foto.load()
+            foto = PILImage.open(io.BytesIO(datos)).convert("RGBA")
+            fondo = PILImage.new("RGBA", foto.size, "white")
+            fondo.alpha_composite(foto)
+            foto = fondo.convert("RGB")
+            # Detectar tinta oscura, ignorando el fondo blanco y el ruido
+            # casi blanco de la imagen exportada por el lienzo del móvil.
+            gris = foto.convert("L")
+            mascara = gris.point(lambda v: 255 if v < 225 else 0)
+            limites = mascara.getbbox()
+            if limites is None:
+                return Spacer(1, 38)
+            margen = max(6, int(min(foto.size) * 0.035))
+            izquierda, arriba, derecha, abajo = limites
+            limites = (max(0, izquierda - margen), max(0, arriba - margen),
+                       min(foto.width, derecha + margen),
+                       min(foto.height, abajo + margen))
+            foto = foto.crop(limites)
             ancho, alto = foto.size
             if ancho <= 0 or alto <= 0:
                 return Spacer(1, 38)
-            escala = min((2.7*inch)/ancho, (.8*inch)/alto)
-            return Image(io.BytesIO(datos), width=ancho*escala,
-                         height=alto*escala)
+            # Mantener proporciones y aprovechar el ancho disponible.
+            escala = min((2.95 * inch) / ancho, (0.95 * inch) / alto)
+            memoria = io.BytesIO()
+            foto.save(memoria, format="PNG")
+            memoria.seek(0)
+            return Image(memoria, width=ancho * escala, height=alto * escala)
         except Exception as exc:
             raise ValueError(f"No se pudo incorporar una firma al PDF: {exc}") from exc
     sig=Table([
