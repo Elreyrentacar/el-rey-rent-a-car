@@ -988,7 +988,7 @@ st.markdown("""<style>
 # El margen se aplica al bloque de imagen, no a un HTML independiente.
 st.markdown("""<style>
 [data-testid="stSidebar"] [data-testid="stElementContainer"]:has([data-testid="stImage"]) {
-    margin-bottom: -46px !important;
+    margin-bottom: -0px !important;
 }
 </style>""", unsafe_allow_html=True)
 
