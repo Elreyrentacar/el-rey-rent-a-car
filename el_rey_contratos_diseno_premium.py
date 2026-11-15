@@ -991,7 +991,7 @@ with st.sidebar:
     if os.path.exists(logo_actual):
         st.image(logo_actual, width=185)
         st.markdown(
-    "<div style='margin-top:-20px;'></div>",
+    "<div style='margin-top:-35px;'></div>",
     unsafe_allow_html=True
         )
         
