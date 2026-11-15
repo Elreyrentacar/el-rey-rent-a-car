@@ -463,9 +463,9 @@ def crear_contrato_pdf(reserva, idioma="Español", firma_bytes=None,
     for name, font, size, leading, color in [
         ("ContractTitle", "Helvetica-Bold", 16, 19, navy),
         ("ContractHead", "Helvetica-Bold", 9, 12, red),
-        ("ContractLabel", "Helvetica-Bold", 7.4, 10, muted),
-        ("ContractText", "Helvetica", 8.4, 11, navy),
-        ("ContractSmall", "Helvetica", 7.4, 10, navy),
+        ("ContractLabel", "Helvetica-Bold", 7.1, 8.5, muted),
+        ("ContractText", "Helvetica", 8.0, 9.5, navy),
+        ("ContractSmall", "Helvetica", 7.0, 8.5, navy),
         ("ContractSubtitle", "Helvetica", 8, 11, muted),
         ("ContractHero", "Helvetica-Bold", 11, 15, white),
         ("ContractHeroSub", "Helvetica", 8, 11, white),
@@ -473,7 +473,7 @@ def crear_contrato_pdf(reserva, idioma="Español", firma_bytes=None,
         ("ContractAmount", "Helvetica-Bold", 12, 15, navy),
     ]:
         styles.add(ParagraphStyle(name=name, fontName=font, fontSize=size,
-                                  leading=leading, textColor=color, spaceAfter=3))
+                                  leading=leading, textColor=color, spaceAfter=1))
     def par(x, sty="ContractText"):
         return Paragraph(escape(str(x if x not in (None, "") else "—")), styles[sty])
     def heading(x):
@@ -522,10 +522,10 @@ def crear_contrato_pdf(reserva, idioma="Español", firma_bytes=None,
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ("LEFTPADDING", (0, 0), (-1, -1), 4),
         ("RIGHTPADDING", (0, 0), (-1, -1), 4),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 9),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
         ("LINEBELOW", (0, 0), (-1, -1), 2.5, red),
     ]))
-    story.extend([header, Spacer(1, 10)])
+    story.extend([header, Spacer(1, 5)])
     hero = Table([[
         [par(t[0], "ContractHero"), par(t[1], "ContractHeroSub")],
         [par("N.º / NO.", "ContractHeroSub"), par(f'#{reserva["id"]}', "ContractHero")],
@@ -535,10 +535,10 @@ def crear_contrato_pdf(reserva, idioma="Español", firma_bytes=None,
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ("LEFTPADDING", (0, 0), (-1, -1), 13),
         ("RIGHTPADDING", (0, 0), (-1, -1), 10),
-        ("TOPPADDING", (0, 0), (-1, -1), 10),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
     ]))
-    story.extend([hero, Spacer(1, 12)])
+    story.extend([hero, Spacer(1, 6)])
 
     def info_celda(etiqueta, valor):
         return [par(etiqueta, "ContractLabel"), par(valor)]
@@ -555,8 +555,8 @@ def crear_contrato_pdf(reserva, idioma="Español", firma_bytes=None,
             ("VALIGN", (0, 0), (-1, -1), "TOP"),
             ("LEFTPADDING", (0, 0), (-1, -1), 12),
             ("RIGHTPADDING", (0, 0), (-1, -1), 10),
-            ("TOPPADDING", (0, 0), (-1, -1), 7),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
+            ("TOPPADDING", (0, 0), (-1, -1), 3),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
             ("LINEBELOW", (0, -1), (-1, -1), .5, line),
         ]))
         return tabla
@@ -566,13 +566,13 @@ def crear_contrato_pdf(reserva, idioma="Español", firma_bytes=None,
         (t[4], conductor or reserva.get("cliente")),
         (t[5], identificacion), (t[6], licencia),
         (t[7], reserva.get("telefono")), (t[8], reserva.get("correo")),
-    ]), Spacer(1, 11), heading(t[9]), Spacer(1, 4), rejilla([
+    ]), Spacer(1, 5), heading(t[9]), Spacer(1, 3), rejilla([
         (t[10], reserva.get("vehiculo")), (t[18], seguro),
         (t[11], str(reserva.get("inicio", ""))[:16].replace("T", " ")),
         (t[12], str(reserva.get("fin", ""))[:16].replace("T", " ")),
         (t[13], reserva.get("lugar_recogida")),
         (t[14], reserva.get("lugar_devolucion")),
-    ]), Spacer(1, 8)])
+    ]), Spacer(1, 4)])
 
     # Importes: el depósito no se suma automáticamente al total del alquiler.
     importes = Table([
@@ -586,15 +586,15 @@ def crear_contrato_pdf(reserva, idioma="Español", firma_bytes=None,
         ("BACKGROUND", (0, 1), (-1, 1), navy),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ("LEFTPADDING", (0, 0), (-1, -1), 12),
-        ("TOPPADDING", (0, 0), (-1, -1), 7),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
+        ("TOPPADDING", (0, 0), (-1, -1), 3),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
     ]))
-    story.extend([importes, Spacer(1, 12), heading(t[19]), Spacer(1, 6)])
+    story.extend([importes, Spacer(1, 5), heading(t[19]), Spacer(1, 3)])
     for clause in t[20:24]:
         story.append(par("• " + clause,"ContractSmall"))
     if condiciones.strip():
         story += [heading(t[27]),par(condiciones,"ContractSmall")]
-    story.append(Spacer(1,12))
+    story.append(Spacer(1,5))
     def firma_celda(datos):
         """Ajusta la firma al PDF recortando el espacio vacío del lienzo.
 
@@ -602,7 +602,7 @@ def crear_contrato_pdf(reserva, idioma="Español", firma_bytes=None,
         solo se prepara una copia para mostrarla en el contrato.
         """
         if not datos:
-            return Spacer(1, 38)
+            return Spacer(1, 28)
         try:
             from PIL import Image as PILImage
             foto = PILImage.open(io.BytesIO(datos)).convert("RGBA")
@@ -615,7 +615,7 @@ def crear_contrato_pdf(reserva, idioma="Español", firma_bytes=None,
             mascara = gris.point(lambda v: 255 if v < 225 else 0)
             limites = mascara.getbbox()
             if limites is None:
-                return Spacer(1, 38)
+                return Spacer(1, 28)
             margen = max(6, int(min(foto.size) * 0.035))
             izquierda, arriba, derecha, abajo = limites
             limites = (max(0, izquierda - margen), max(0, arriba - margen),
@@ -624,9 +624,9 @@ def crear_contrato_pdf(reserva, idioma="Español", firma_bytes=None,
             foto = foto.crop(limites)
             ancho, alto = foto.size
             if ancho <= 0 or alto <= 0:
-                return Spacer(1, 38)
+                return Spacer(1, 28)
             # Mantener proporciones y aprovechar el ancho disponible.
-            escala = min((2.95 * inch) / ancho, (0.95 * inch) / alto)
+            escala = min((2.95 * inch) / ancho, (0.64 * inch) / alto)
             memoria = io.BytesIO()
             foto.save(memoria, format="PNG")
             memoria.seek(0)
@@ -645,8 +645,8 @@ def crear_contrato_pdf(reserva, idioma="Español", firma_bytes=None,
         ("LINEABOVE",(0,0),(-1,0),2,red),
         ("LEFTPADDING",(0,0),(-1,-1),10),
         ("RIGHTPADDING",(0,0),(-1,-1),10),
-        ("TOPPADDING",(0,0),(-1,-1),5),
-        ("BOTTOMPADDING",(0,0),(-1,-1),5),
+        ("TOPPADDING",(0,0),(-1,-1),2),
+        ("BOTTOMPADDING",(0,0),(-1,-1),2),
     ]))
     story.append(KeepTogether(sig))
     def pie_pagina(canvas, document):
