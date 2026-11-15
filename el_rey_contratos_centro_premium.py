@@ -704,6 +704,163 @@ def descargar_contrato_privado(reserva_id, nombre):
     )
 
 
+# ─── EXPEDIENTES DIGITALES PRIVADOS POR RESERVA ──────────────────────────
+# Mantener este módulo detrás del acceso administrativo de app.py.
+EXPEDIENTES_BUCKET = "expedientes-privados"
+EXPEDIENTE_CATEGORIAS = {
+    "Licencia de conducir": "licencia",
+    "Pasaporte o identificación": "identificacion",
+    "Comprobante de pago": "comprobante",
+    "Entrega del vehículo": "entrega",
+    "Devolución del vehículo": "devolucion",
+    "Inspección / daños": "inspeccion",
+    "Otros documentos": "otros",
+}
+EXPEDIENTE_MIMES = {
+    "application/pdf": ".pdf",
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+}
+EXPEDIENTE_MAX_BYTES = 10 * 1024 * 1024
+
+
+def validar_documento_expediente(contenido, nombre):
+    """Verifica formato real, tamaño y extensión antes de subir a Storage."""
+    if not contenido or len(contenido) > EXPEDIENTE_MAX_BYTES:
+        raise ValueError("El archivo debe tener contenido y pesar como máximo 10 MB.")
+    extension = os.path.splitext(str(nombre).lower())[1]
+    if extension == ".pdf" and contenido.startswith(b"%PDF-"):
+        return "application/pdf", ".pdf"
+    if extension in (".jpg", ".jpeg", ".png"):
+        from PIL import Image as PILImage
+        try:
+            with PILImage.open(io.BytesIO(contenido)) as imagen:
+                formato = imagen.format
+                imagen.verify()
+        except Exception as exc:
+            raise ValueError("La imagen no es válida o está dañada.") from exc
+        if extension in (".jpg", ".jpeg") and formato == "JPEG":
+            return "image/jpeg", ".jpg"
+        if extension == ".png" and formato == "PNG":
+            return "image/png", ".png"
+    raise ValueError("Solo se permiten PDF, JPG y PNG válidos.")
+
+
+def guardar_documento_expediente(reserva_id, categoria, contenido, nombre_original):
+    if categoria not in EXPEDIENTE_CATEGORIAS:
+        raise ValueError("Categoría no válida.")
+    mime, extension = validar_documento_expediente(contenido, nombre_original)
+    # Sin nombres personales, pasaportes ni otros datos sensibles en las rutas.
+    nombre = (f"{EXPEDIENTE_CATEGORIAS[categoria]}_"
+              f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_"
+              f"{uuid4().hex[:12]}{extension}")
+    ruta = f"reservas/{int(reserva_id)}/{nombre}"
+    supabase_db().storage.from_(EXPEDIENTES_BUCKET).upload(
+        path=ruta, file=contenido,
+        file_options={"content-type": mime, "upsert": "false"}
+    )
+    return ruta
+
+
+def listar_documentos_expediente(reserva_id):
+    items = supabase_db().storage.from_(EXPEDIENTES_BUCKET).list(
+        path=f"reservas/{int(reserva_id)}"
+    ) or []
+    return sorted(
+        [item for item in items if
+         os.path.splitext(str(item.get("name", "")).lower())[1] in (".pdf", ".jpg", ".png")],
+        key=lambda item: str(item.get("name", "")), reverse=True
+    )
+
+
+def descargar_documento_expediente(reserva_id, nombre):
+    # Solo archivos en la carpeta de la reserva seleccionada.
+    if (not nombre or "/" in nombre or "\\" in nombre or
+            os.path.splitext(nombre.lower())[1] not in (".pdf", ".jpg", ".png")):
+        raise ValueError("Nombre de documento no válido.")
+    # Verificar pertenencia al expediente antes de recuperar los bytes.
+    disponibles = {item.get("name") for item in listar_documentos_expediente(reserva_id)}
+    if nombre not in disponibles:
+        raise ValueError("Documento no encontrado en esta reserva.")
+    return supabase_db().storage.from_(EXPEDIENTES_BUCKET).download(
+        f"reservas/{int(reserva_id)}/{nombre}"
+    )
+
+
+def pantalla_expedientes():
+    st.subheader("🗂️ Expediente digital por cliente")
+    st.caption("Documentos privados organizados por reserva en Supabase Storage.")
+    st.info("El acceso debe permanecer restringido a administradores. No compartas capturas de licencias ni pasaportes.")
+    reservas = query("rey_reservas", order="id", desc=True)
+    if not reservas:
+        st.warning("Primero registra una reserva para crear su expediente.")
+        return
+    opciones = {f'#{r["id"]} · {r.get("cliente") or "Sin nombre"} · {r.get("vehiculo") or "—"}': r
+                for r in reservas}
+    reserva = opciones[st.selectbox("📋 Seleccionar reserva", list(opciones), key="exp_reserva")]
+    rid = reserva["id"]
+    st.markdown(f'**Reserva #{rid}** · {reserva.get("cliente") or "—"} · {reserva.get("vehiculo") or "—"}')
+    st.caption("El contrato firmado sigue disponible en «Centro de contratos». Aquí se archivan documentos complementarios.")
+
+    st.markdown("#### 📤 Agregar documento al expediente")
+    categoria = st.selectbox("Tipo de documento", list(EXPEDIENTE_CATEGORIAS), key=f"exp_cat_{rid}")
+    archivo = st.file_uploader("Seleccionar PDF o fotografía (JPG/PNG, máximo 10 MB)",
+                               type=["pdf", "jpg", "jpeg", "png"], key=f"exp_subir_{rid}")
+    if archivo is not None:
+        st.caption(f"Archivo seleccionado: {archivo.name} · {len(archivo.getvalue()) / 1024 / 1024:.2f} MB")
+    if st.button("🔐 Guardar documento en expediente", type="primary",
+                 disabled=archivo is None, key=f"exp_guardar_{rid}"):
+        try:
+            ruta = guardar_documento_expediente(rid, categoria, archivo.getvalue(), archivo.name)
+            st.success("✅ Documento guardado en el expediente privado.")
+            st.caption(f"Referencia interna: {ruta}")
+            st.session_state.pop(f"exp_lista_{rid}", None)
+            st.session_state.pop(f"exp_descarga_{rid}", None)
+        except ValueError as exc:
+            st.error(str(exc))
+        except Exception:
+            st.error("No se pudo guardar el documento. Verifica los permisos de Storage y la conexión con Supabase.")
+
+    st.markdown("#### 📁 Documentos archivados")
+    if st.button("🔄 Consultar expediente", key=f"exp_consultar_{rid}"):
+        try:
+            st.session_state[f"exp_lista_{rid}"] = listar_documentos_expediente(rid)
+            st.session_state.pop(f"exp_descarga_{rid}", None)
+        except Exception:
+            st.error("No se pudo consultar el expediente privado. Comprueba los permisos de Storage.")
+    lista = st.session_state.get(f"exp_lista_{rid}")
+    if lista is None:
+        st.caption("Pulsa «Consultar expediente» para ver los documentos de esta reserva.")
+        return
+    st.metric("📂 Documentos encontrados", len(lista))
+    if not lista:
+        st.info("Esta reserva todavía no tiene documentos archivados.")
+        return
+    etiquetas = {f'{item["name"]}': item["name"] for item in lista}
+    st.dataframe([{"Archivo": item["name"],
+                   "Tipo": item["name"].split("_")[0].capitalize()}
+                  for item in lista], hide_index=True, use_container_width=True)
+    seleccionado = etiquetas[st.selectbox("Seleccionar documento para descargar",
+                                         list(etiquetas), key=f"exp_elegir_{rid}")]
+    if st.button("📥 Preparar descarga privada", key=f"exp_preparar_{rid}"):
+        try:
+            contenido = descargar_documento_expediente(rid, seleccionado)
+            if not contenido:
+                raise ValueError("Archivo vacío")
+            st.session_state[f"exp_descarga_{rid}"] = (seleccionado, contenido)
+            st.success("Documento recuperado. Ya puedes descargarlo.")
+        except Exception:
+            st.session_state.pop(f"exp_descarga_{rid}", None)
+            st.error("No se pudo recuperar el documento del expediente.")
+    preparado = st.session_state.get(f"exp_descarga_{rid}")
+    if preparado and preparado[0] == seleccionado:
+        extension = os.path.splitext(seleccionado)[1].lower()
+        mime = {".pdf": "application/pdf", ".jpg": "image/jpeg", ".png": "image/png"}[extension]
+        st.download_button("📄 Descargar documento archivado", data=preparado[1],
+                           file_name=seleccionado, mime=mime, key=f"exp_descargar_{rid}")
+    st.caption("Los archivos permanecen privados en Supabase; no se crean enlaces públicos.")
+
+
 def pantalla_centro_contratos():
     """Consulta centralizada de PDFs privados; no modifica contratos ni reservas."""
     st.subheader("🗂️ Centro de Contratos Premium")
@@ -1156,7 +1313,7 @@ with st.sidebar:
         st.image(logo_actual, width=185)
     st.title("EL REY RENT A CAR")
     st.caption("COSTA RICA · PANEL ADMINISTRATIVO")
-    page = st.radio("MENÚ", ["Inicio", "Nueva cotización", "Reservas", "Devoluciones", "Vehículos y tarifas", "Historial", "Contratos", "Centro de contratos"])
+    page = st.radio("MENÚ", ["Inicio", "Nueva cotización", "Reservas", "Devoluciones", "Vehículos y tarifas", "Historial", "Contratos", "Centro de contratos", "Expedientes digitales"])
 
 if page != "Inicio":
     st.title("👑 EL REY RENT A CAR")
@@ -1559,6 +1716,8 @@ try:
         pantalla_contratos()
     elif page == "Centro de contratos":
         pantalla_centro_contratos()
+    elif page == "Expedientes digitales":
+        pantalla_expedientes()
     elif page == "Historial":
         st.subheader("📚 Historial de cotizaciones")
         rows=query("rey_cotizaciones",order="id",desc=True)
