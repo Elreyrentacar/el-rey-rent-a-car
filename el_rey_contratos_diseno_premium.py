@@ -984,17 +984,20 @@ st.markdown("""<style>
     [data-testid="stMain"] :is(.stButton,.stDownloadButton,.stFormSubmitButton) button {min-height:46px;}
 }
 </style>""", unsafe_allow_html=True)
+# Ajuste exclusivo del espacio entre el logo y el título del menú lateral.
+# El margen se aplica al bloque de imagen, no a un HTML independiente.
+st.markdown("""<style>
+[data-testid="stSidebar"] [data-testid="stElementContainer"]:has([data-testid="stImage"]) {
+    margin-bottom: -46px !important;
+}
+</style>""", unsafe_allow_html=True)
+
 with st.sidebar:
     estilo = st.selectbox("🎨 Selecciona el logo", ["Normal 🚘", "Navideño 🎄"], index=1 if st.session_state.logo_temporada == "Navideño" else 0)
     st.session_state.logo_temporada = "Navideño" if estilo.startswith("Navideño") else "Normal"
     logo_actual = LOGO_NAVIDAD if st.session_state.logo_temporada == "Navideño" else LOGO_PATH
     if os.path.exists(logo_actual):
         st.image(logo_actual, width=185)
-        st.markdown(
-    "<div style='margin-top:-65px;'></div>",
-    unsafe_allow_html=True
-        )
-        
     st.title("EL REY RENT A CAR")
     st.caption("COSTA RICA · PANEL ADMINISTRATIVO")
     page = st.radio("MENÚ", ["Inicio", "Nueva cotización", "Reservas", "Devoluciones", "Vehículos y tarifas", "Historial", "Contratos"])
