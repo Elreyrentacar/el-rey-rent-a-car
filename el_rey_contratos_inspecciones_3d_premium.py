@@ -815,19 +815,19 @@ def plano_vehiculo_base():
 def visor_vehiculo_3d(prefijo):
     """Visor bidireccional: recibe marcas 3D y las conserva por reserva/etapa."""
     import streamlit.components.v1 as components
-    ruta = os.path.join(APP_DIR, "visor_suv")
+    ruta = os.path.join(APP_DIR, "visor_rav4_prueba")
     if not os.path.isfile(os.path.join(ruta, "index.html")):
-        st.warning("Falta la carpeta visor_suv. Sube también sus archivos a GitHub.")
+        st.warning("Falta visor_rav4_prueba/index.html. Verifica que la carpeta de pruebas esté en GitHub.")
         return []
     if not hasattr(visor_vehiculo_3d, "componente"):
         visor_vehiculo_3d.componente = components.declare_component(
-            "visor_suv_inspeccion", path=ruta)
-    st.markdown("#### 🚙 Inspección 3D · marcar directamente sobre el SUV")
+            "visor_rav4_inspeccion", path=ruta)
+    st.markdown("#### 🚙 Inspección 3D · Toyota RAV4 realista")
     st.caption("Pulsa 📍 Marcar daño y toca la carrocería. Cambia a 🔄 Girar para revisar otros lados. Las marcas quedan vinculadas a esta inspección.")
     clave = f"{prefijo}_marcas_3d"
     marcas = visor_vehiculo_3d.componente(
         marcas=st.session_state.get(clave, []),
-        key=f"visor_suv_{prefijo}", default=st.session_state.get(clave, []))
+        key=f"visor_rav4_{prefijo}", default=st.session_state.get(clave, []))
     if isinstance(marcas, list):
         # Limitar cantidad y validar el contenido recibido del navegador.
         validas = []
