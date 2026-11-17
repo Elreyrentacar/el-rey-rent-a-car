@@ -1,0 +1,56 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui;background:#f2f5fa;color:#17283e}#toolbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:8px;background:#fff}button,select{padding:8px;border:1px solid #cbd5e1;border-radius:8px;background:white;font-size:13px}button.on{background:#183451;color:white}#stage{height:350px;width:100%;overflow:hidden;touch-action:none;position:relative}#stage canvas{display:block;width:100%!important;height:100%!important}#hint{position:absolute;bottom:8px;left:8px;background:#ffffffdd;padding:6px;border-radius:7px;font-size:12px;pointer-events:none}#list{padding:8px;font-size:12px;max-height:80px;overflow:auto}#error{padding:10px;color:#a12c37;display:none}</style></head><body>
+<div id="toolbar"><button id="rotate" class="on">🔄 Girar</button><button id="mark">📍 Marcar daño</button><select id="kind"><option>Rayón</option><option>Golpe</option><option>Abolladura</option><option>Otro</option></select><button id="undo">↶ Deshacer</button><button id="clear">🧹 Limpiar</button></div><div id="model" style="padding:5px 10px;font-size:12px;font-weight:600;color:#183451">🚙 Modelo de reserva</div><div id="stage"><div id="hint">Girar: arrastra · Marcar: toca el vehículo · Zoom: dos dedos</div></div><div id="list">Sin daños marcados</div><div id="error"></div>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+(function(){
+const send=(type,data)=>window.parent.postMessage({isStreamlitMessage:true,type,...data},'*');
+send('streamlit:componentReady',{apiVersion:1});send('streamlit:setFrameHeight',{height:500});
+let marks=[],mode='rotate',lastInput='',initialized=false;
+function emit(){send('streamlit:setComponentValue',{value:marks});document.getElementById('list').textContent=marks.length?marks.map((m,i)=>`${i+1}. ${m.tipo} · ${m.zona}`).join('   |   '):'Sin daños marcados';}
+window.addEventListener('message',e=>{if(e.data?.type==='streamlit:render'){const a=e.data.args||{};document.getElementById("model").textContent="🚙 "+(a.modelo||"Toyota RAV4")+" · Cargando modelo 3D…";if(!initialized){marks=Array.isArray(a.marcas)?a.marcas:[];initialized=true;emit();} }});
+if(!THREE){document.getElementById('error').style.display='block';document.getElementById('error').textContent='No se cargó el motor 3D. Revisa la conexión a internet.';return;}
+try{
+const T=THREE,stage=document.getElementById('stage'),scene=new T.Scene();scene.background=new T.Color(0xf2f5fa);
+const camera=new T.PerspectiveCamera(44,1,.1,100);const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.8));renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;stage.prepend(renderer.domElement);
+scene.add(new T.HemisphereLight(0xffffff,0x69798d,2.5));let sun=new T.DirectionalLight(0xffffff,3);sun.position.set(5,9,7);sun.castShadow=true;scene.add(sun);
+const floor=new T.Mesh(new T.PlaneGeometry(200,200),new T.MeshStandardMaterial({color:0xe9eef5}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+ const car=new T.Group();scene.add(car);const surfaces=[];
+ const status=document.getElementById('model');
+ const loader=new GLTFLoader();
+ loader.load('./toyota_rav4_2026.glb',gltf=>{
+   const model=gltf.scene;
+   model.updateMatrixWorld(true);
+   const bounds=new T.Box3().setFromObject(model);
+   const size=bounds.getSize(new T.Vector3());
+   if(!Number.isFinite(size.x)||Math.max(size.x,size.y,size.z)<0.001)throw new Error('Modelo sin dimensiones válidas');
+   const scale=4.7/Math.max(size.x,size.z);
+   model.scale.setScalar(scale);
+   model.updateMatrixWorld(true);
+   const scaled=new T.Box3().setFromObject(model);
+   const center=scaled.getCenter(new T.Vector3());
+   model.position.x-=center.x;model.position.z-=center.z;model.position.y-=scaled.min.y;
+   car.add(model);
+   model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.userData.zone='Carrocería / exterior';surfaces.push(o);}});
+   status.textContent='🚙 Toyota RAV4 2026 · Modelo 3D cargado';
+   drawMarks();
+ },undefined,err=>{
+   const box=document.getElementById('error');box.style.display='block';
+   box.textContent='No se pudo cargar toyota_rav4_2026.glb. Comprueba que está en la misma carpeta que index.html. '+(err?.message||'');
+   status.textContent='⚠️ Modelo 3D no cargado';
+ });
+// Marcas adheridas a la superficie en coordenadas locales.
+const markerGroup=new T.Group();car.add(markerGroup);function drawMarks(){markerGroup.clear();for(const m of marks){let ball=new T.Mesh(new T.SphereGeometry(.075,12,10),new T.MeshBasicMaterial({color:0xed283f,depthTest:false}));ball.position.set(m.x,m.y,m.z);ball.renderOrder=20;markerGroup.add(ball);}}
+let yaw=.62,pitch=.23,dist=10.5;function update(){camera.position.set(dist*Math.sin(yaw)*Math.cos(pitch),1.15+dist*Math.sin(pitch),dist*Math.cos(yaw)*Math.cos(pitch));camera.lookAt(0,1.15,0);}function resize(){let w=Math.max(1,stage.clientWidth),h=Math.max(1,stage.clientHeight);camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false);}resize();update();new ResizeObserver(resize).observe(stage);
+let pointers=new Map(),start=null,moved=false,pinch=0;const raycaster=new T.Raycaster(),mouse=new T.Vector2();
+function point(e){let r=renderer.domElement.getBoundingClientRect();mouse.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);raycaster.setFromCamera(mouse,camera);return raycaster.intersectObjects(surfaces,false)[0];}
+function addMark(e){let hit=point(e);if(!hit)return;let pos=car.worldToLocal(hit.point.clone());let normal=hit.face.normal.clone().transformDirection(hit.object.matrixWorld);pos.addScaledVector(normal,.045);marks.push({x:+pos.x.toFixed(3),y:+pos.y.toFixed(3),z:+pos.z.toFixed(3),tipo:document.getElementById('kind').value,zona:hit.object.userData.zone||'Carrocería'});drawMarks();emit();}
+stage.addEventListener('pointerdown',e=>{pointers.set(e.pointerId,[e.clientX,e.clientY]);if(pointers.size===1){start=[e.clientX,e.clientY];moved=false;}stage.setPointerCapture(e.pointerId);});
+stage.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;let old=pointers.get(e.pointerId);pointers.set(e.pointerId,[e.clientX,e.clientY]);if(pointers.size===2){let p=[...pointers.values()];let d=Math.hypot(p[0][0]-p[1][0],p[0][1]-p[1][1]);if(pinch)dist=Math.max(5.5,Math.min(17,dist*pinch/d));pinch=d;update();return;}pinch=0;if(start&&Math.hypot(e.clientX-start[0],e.clientY-start[1])>7)moved=true;if(mode==='rotate'){yaw-=(e.clientX-old[0])*.008;pitch=Math.max(-.05,Math.min(1.3,pitch+(e.clientY-old[1])*.006));update();}});
+stage.addEventListener('pointerup',e=>{if(mode==='mark'&&!moved&&pointers.size===1)addMark(e);pointers.delete(e.pointerId);pinch=0;});stage.addEventListener('pointercancel',e=>{pointers.delete(e.pointerId);pinch=0;});stage.addEventListener('wheel',e=>{e.preventDefault();dist=Math.max(5.5,Math.min(17,dist+e.deltaY*.009));update();},{passive:false});
+function setMode(m){mode=m;document.getElementById('rotate').classList.toggle('on',m==='rotate');document.getElementById('mark').classList.toggle('on',m==='mark');}document.getElementById('rotate').onclick=()=>setMode('rotate');document.getElementById('mark').onclick=()=>setMode('mark');document.getElementById('undo').onclick=()=>{marks.pop();drawMarks();emit();};document.getElementById('clear').onclick=()=>{if(marks.length&&confirm('¿Eliminar todas las marcas 3D?')){marks=[];drawMarks();emit();}};
+drawMarks();emit();function animate(){requestAnimationFrame(animate);renderer.render(scene,camera);}animate();
+}catch(err){let box=document.getElementById('error');box.style.display='block';box.textContent='No se pudo iniciar el visor 3D: '+err.message;}
+})();</script></body></html>
