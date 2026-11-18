@@ -1683,6 +1683,15 @@ st.markdown("""<style>
 [data-testid="stMain"] [data-testid="stAlert"] :is(p,span,li) {
     -webkit-text-fill-color:currentColor;
 }
+/* Selector de temporada: texto oscuro sobre fondo claro. */
+[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] > div {
+    background:#FFFFFF !important;
+}
+[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] *,
+[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] {
+    color:#17243A !important;
+    -webkit-text-fill-color:#17243A !important;
+}
 /* El texto del menú permanece blanco, excepto en controles y avisos claros. */
 [data-testid="stSidebar"] [data-testid="stCaptionContainer"] p {
     color:#E5EBF5 !important;
@@ -1701,7 +1710,7 @@ st.markdown("""<style>
 # El margen se aplica al bloque de imagen, no a un HTML independiente.
 st.markdown("""<style>
 [data-testid="stSidebar"] [data-testid="stElementContainer"]:has([data-testid="stImage"]) {
-    margin-bottom: -46px !important;
+    margin-bottom: 8px !important;
 }
 </style>""", unsafe_allow_html=True)
 
