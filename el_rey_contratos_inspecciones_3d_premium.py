@@ -14,7 +14,7 @@ from xml.sax.saxutils import escape
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 LOGO_PATH = os.path.join(APP_DIR, "assets", "file_000000004f9081f9bc6cc419f8e40e9a.png")
-LOGO_NAVIDAD = os.path.join(APP_DIR, "assets", "logo_navidad.jpg")
+LOGO_NAVIDAD = os.path.join(APP_DIR, "assets", "logo_navidad.png")
 if "logo_temporada" not in st.session_state:
     st.session_state.logo_temporada = "Normal"
 @st.cache_resource
@@ -1711,7 +1711,6 @@ with st.sidebar:
     logo_actual = LOGO_NAVIDAD if st.session_state.logo_temporada == "Navideño" else LOGO_PATH
     if os.path.exists(logo_actual):
         st.image(logo_actual, width=185)
-    st.title("EL REY RENT A CAR")
     st.caption("COSTA RICA · PANEL ADMINISTRATIVO")
     page = st.radio("MENÚ", ["Inicio", "Nueva cotización", "Reservas", "Devoluciones", "Vehículos y tarifas", "Historial", "Contratos", "Centro de contratos", "Expedientes digitales", "Inspecciones de vehículos"])
 
