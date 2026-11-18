@@ -1716,30 +1716,29 @@ st.markdown("""<style>
 
 # Estilo exclusivo del selector de temporada.
 st.markdown("""<style>
-[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] > div {
-    background-color:#243B55 !important;
-    border:1px solid #627B98 !important;
-    border-radius:12px !important;
-}
-[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] [role="combobox"] {
-    background-color:transparent !important;
-}
-[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] *,
-[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] {
+section[data-testid="stSidebar"] .st-key-logo_selector [data-baseweb="select"],
+section[data-testid="stSidebar"] .st-key-logo_selector [data-baseweb="select"] > div,
+section[data-testid="stSidebar"] .st-key-logo_selector [data-baseweb="select"] div,
+section[data-testid="stSidebar"] .st-key-logo_selector [data-baseweb="select"] input {
+    background:#243B55 !important;
     color:#FFFFFF !important;
     -webkit-text-fill-color:#FFFFFF !important;
 }
-[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] svg {
-    fill:currentColor !important;
+section[data-testid="stSidebar"] .st-key-logo_selector [data-baseweb="select"] > div {
+    border:1px solid #627B98 !important;
+    border-radius:12px !important;
 }
-[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] > div:focus-within {
-    border-color:#A5C5E8 !important;
-    box-shadow:0 0 0 1px #A5C5E8 !important;
+section[data-testid="stSidebar"] .st-key-logo_selector [data-baseweb="select"] * {
+    color:#FFFFFF !important;
+    -webkit-text-fill-color:#FFFFFF !important;
+}
+section[data-testid="stSidebar"] .st-key-logo_selector [data-baseweb="select"] svg {
+    fill:#FFFFFF !important;
 }
 </style>""", unsafe_allow_html=True)
 
 with st.sidebar:
-    estilo = st.selectbox("🎨 Selecciona el logo", ["Normal 🚘", "Navideño 🎄"], index=1 if st.session_state.logo_temporada == "Navideño" else 0)
+    estilo = st.selectbox("🎨 Selecciona el logo", ["Normal 🚘", "Navideño 🎄"], index=1 if st.session_state.logo_temporada == "Navideño" else 0, key="logo_selector")
     st.session_state.logo_temporada = "Navideño" if estilo.startswith("Navideño") else "Normal"
     logo_actual = LOGO_NAVIDAD if st.session_state.logo_temporada == "Navideño" else LOGO_PATH
     if os.path.exists(logo_actual):
