@@ -102,6 +102,120 @@ def money(v, cur="USD"):
     return f"${v:,.2f}" if cur == "USD" else f"{v:,.0f} CRC"
 
 
+
+
+# Condiciones comerciales para los PDF de cotización y comprobante de reserva.
+# Son informativas; no modifican automáticamente importes ni impuestos.
+REY_CONDICIONES_PDF = {'Español': ('INFORMACIÓN IMPORTANTE',
+             'REQUISITOS PARA EL ALQUILER',
+             ['El monto total del alquiler deberá pagarse en efectivo al momento de la llegada.',
+              'Si el alquiler se paga mediante otro método de pago, se aplicará un 15% adicional por '
+              'concepto de impuestos locales.',
+              'Se requiere un depósito de garantía de $750 USD, mediante efectivo, tarjeta de crédito o '
+              'débito a través de PayPal.',
+              'Esta reserva incluye el seguro básico obligatorio.',
+              'El cliente será responsable de pagar todos los daños ocasionados por conducción '
+              'negligente.',
+              'Para aplicar la cobertura del seguro, todos los daños deberán reportarse a la compañía '
+              'aseguradora.',
+              'Para alquileres de 7 días o más, se ofrece un seguro opcional con deducible de $0 USD.',
+              'La devolución después de la hora acordada genera el cobro de un día adicional completo '
+              'por cada período de hasta 24 horas de retraso, sin horas de cortesía.',
+              'La cotización y las reservas pendientes están sujetas a disponibilidad y confirmación de '
+              'la empresa.'],
+             ['Pasaporte.',
+              'Licencia de conducir física y vigente al momento del alquiler. No se aceptan licencias '
+              'digitales.',
+              'Edad mínima del conductor: 24 años.',
+              'El deducible en caso de daños es de $1.200 USD y del 20% sobre daños a terceros, '
+              'independientemente de quién sea responsable del accidente.',
+              'Si se contrata el seguro con deducible de $0 USD, el depósito de garantía será de $500 '
+              'USD.']),
+ 'English': ('IMPORTANT INFORMATION',
+             'RENTAL REQUIREMENTS',
+             ['The total rental amount must be paid in cash upon arrival.',
+              'If the rental is paid using another payment method, an additional 15% will apply for '
+              'local taxes.',
+              'A USD $750 security deposit is required, payable in cash, by credit card, or by debit '
+              'card through PayPal.',
+              'This booking includes mandatory basic insurance.',
+              'The customer is responsible for all damage caused by negligent driving.',
+              'To qualify for insurance coverage, all damage must be reported to the insurance company.',
+              'For rentals of 7 days or more, optional insurance with a USD $0 deductible is available.',
+              'Any return after the agreed time incurs an additional full-day charge for each period of '
+              'up to 24 hours of delay, with no grace period.',
+              'Quotations and pending bookings are subject to availability and company confirmation.'],
+             ['Passport.',
+              'A valid physical driver’s license at the time of rental. Digital licenses are not '
+              'accepted.',
+              'Minimum driver age: 24 years.',
+              'The deductible for damage is USD $1,200, plus 20% for third-party damage, regardless of '
+              'who is responsible for the accident.',
+              'If insurance with a USD $0 deductible is purchased, the security deposit is USD $500.']),
+ 'Português': ('INFORMAÇÕES IMPORTANTES',
+               'REQUISITOS PARA O ALUGUEL',
+               ['O valor total do aluguel deverá ser pago em dinheiro na chegada.',
+                'Se o aluguel for pago por outro meio de pagamento, será aplicado um adicional de 15% '
+                'referente a impostos locais.',
+                'É exigido um depósito de garantia de USD $750, em dinheiro, cartão de crédito ou '
+                'cartão de débito por meio do PayPal.',
+                'Esta reserva inclui o seguro básico obrigatório.',
+                'O cliente será responsável por todos os danos causados por direção negligente.',
+                'Para que a cobertura do seguro seja aplicada, todos os danos deverão ser comunicados à '
+                'seguradora.',
+                'Para aluguéis de 7 dias ou mais, há seguro opcional com franquia de USD $0.',
+                'A devolução após o horário combinado gera a cobrança de um dia adicional completo por '
+                'cada período de até 24 horas de atraso, sem tolerância.',
+                'Cotações e reservas pendentes estão sujeitas à disponibilidade e à confirmação da '
+                'empresa.'],
+               ['Passaporte.',
+                'Carteira de habilitação física e válida no momento do aluguel. Carteiras digitais não '
+                'são aceitas.',
+                'Idade mínima do condutor: 24 anos.',
+                'A franquia em caso de danos é de USD $1.200 e de 20% sobre danos a terceiros, '
+                'independentemente de quem seja responsável pelo acidente.',
+                'Caso seja contratado seguro com franquia de USD $0, o depósito de garantia será de USD '
+                '$500.']),
+ 'Français': ('INFORMATIONS IMPORTANTES',
+              'CONDITIONS REQUISES POUR LA LOCATION',
+              ['Le montant total de la location doit être payé en espèces à l’arrivée.',
+               'Si la location est réglée par un autre moyen de paiement, un supplément de 15 % au '
+               'titre des taxes locales sera appliqué.',
+               'Un dépôt de garantie de 750 USD est exigé, en espèces, par carte de crédit ou par carte '
+               'de débit via PayPal.',
+               'Cette réservation comprend l’assurance de base obligatoire.',
+               'Le client est responsable de tous les dommages causés par une conduite négligente.',
+               'Pour bénéficier de la couverture d’assurance, tous les dommages doivent être déclarés à '
+               'l’assureur.',
+               'Pour les locations de 7 jours ou plus, une assurance facultative avec une franchise de '
+               '0 USD est proposée.',
+               'Tout retour après l’heure convenue entraîne la facturation d’une journée entière '
+               'supplémentaire par période de retard allant jusqu’à 24 heures, sans délai de grâce.',
+               'Les devis et réservations en attente sont soumis à la disponibilité et à la '
+               'confirmation de l’entreprise.'],
+              ['Passeport.',
+               'Permis de conduire physique et valide au moment de la location. Les permis numériques '
+               'ne sont pas acceptés.',
+               'Âge minimum du conducteur : 24 ans.',
+               'La franchise en cas de dommages est de 1 200 USD et de 20 % pour les dommages causés à '
+               'des tiers, quelle que soit la personne responsable de l’accident.',
+               'Si une assurance avec une franchise de 0 USD est souscrite, le dépôt de garantie est de '
+               '500 USD.'])}
+
+def agregar_condiciones_rey(story, idioma, estilos, estilo_titulo, estilo_texto):
+    """Agrega las condiciones de alquiler traducidas al final del documento."""
+    datos = REY_CONDICIONES_PDF.get(idioma, REY_CONDICIONES_PDF["Español"])
+    for titulo, clausulas in ((datos[0], datos[2]), (datos[1], datos[3])):
+        story.append(Spacer(1, 10))
+        story.append(Paragraph(escape(titulo), estilos[estilo_titulo]))
+        story.append(Spacer(1, 4))
+        for clausula in clausulas:
+            story.append(Paragraph("&#8226; " + escape(clausula), estilos[estilo_texto]))
+            story.append(Spacer(1, 3))
+    story.append(Spacer(1, 6))
+    story.append(Paragraph("EL REY RENT A CAR · COSTA RICA", estilos[estilo_titulo]))
+
+
 def create_pdf(q):
     """Cotización PDF premium, con tablas adaptables y cuatro idiomas."""
     from reportlab.lib.utils import ImageReader
@@ -264,9 +378,7 @@ def create_pdf(q):
             f'{localized("Días adicionales", "Additional days", "Dias adicionais", "Jours supplémentaires")}: '
             f'{q["late_days"]}', "ReyTerms"))
 
-    story.extend([Spacer(1, 3), section(t["terms"]), Spacer(1, 3),
-                  p("• " + t["term1"], "ReyTerms"), Spacer(1, 3),
-                  p("• " + t["term2"], "ReyTerms")])
+    agregar_condiciones_rey(story, q["language"], styles, "ReySection", "ReyTerms")
     if q.get("notes"):
         story.extend([Spacer(1, 3), section(localized(
             "NOTAS", "NOTES", "OBSERVAÇÕES", "NOTES")),
@@ -428,11 +540,8 @@ def crear_comprobante_reserva(reserva, idioma="Español", abono=0.0):
         Table([[par(x[3], "VoucherNote"), par(x[4], "VoucherNote")]],
               colWidths=[4.65*inch, 2.6*inch]),
         Spacer(1, 6),
-        par(t[14], "VoucherLabel"), Spacer(1, 4),
-        par(t[15], "VoucherNote"), Spacer(1, 3),
-        par(t[16], "VoucherNote"), Spacer(1, 6),
-        par(t[17], "VoucherNote")
     ])
+    agregar_condiciones_rey(story, idioma, stl, "VoucherLabel", "VoucherNote")
     doc.build(story)
     return buf.getvalue()
 
@@ -1714,31 +1823,8 @@ st.markdown("""<style>
 }
 </style>""", unsafe_allow_html=True)
 
-# Estilo exclusivo del selector de temporada.
-st.markdown("""<style>
-section[data-testid="stSidebar"] .st-key-logo_selector [data-baseweb="select"],
-section[data-testid="stSidebar"] .st-key-logo_selector [data-baseweb="select"] > div,
-section[data-testid="stSidebar"] .st-key-logo_selector [data-baseweb="select"] div,
-section[data-testid="stSidebar"] .st-key-logo_selector [data-baseweb="select"] input {
-    background:#243B55 !important;
-    color:#FFFFFF !important;
-    -webkit-text-fill-color:#FFFFFF !important;
-}
-section[data-testid="stSidebar"] .st-key-logo_selector [data-baseweb="select"] > div {
-    border:1px solid #627B98 !important;
-    border-radius:12px !important;
-}
-section[data-testid="stSidebar"] .st-key-logo_selector [data-baseweb="select"] * {
-    color:#FFFFFF !important;
-    -webkit-text-fill-color:#FFFFFF !important;
-}
-section[data-testid="stSidebar"] .st-key-logo_selector [data-baseweb="select"] svg {
-    fill:#FFFFFF !important;
-}
-</style>""", unsafe_allow_html=True)
-
 with st.sidebar:
-    estilo = st.selectbox("🎨 Selecciona el logo", ["Normal 🚘", "Navideño 🎄"], index=1 if st.session_state.logo_temporada == "Navideño" else 0, key="logo_selector")
+    estilo = st.selectbox("🎨 Selecciona el logo", ["Normal 🚘", "Navideño 🎄"], index=1 if st.session_state.logo_temporada == "Navideño" else 0)
     st.session_state.logo_temporada = "Navideño" if estilo.startswith("Navideño") else "Normal"
     logo_actual = LOGO_NAVIDAD if st.session_state.logo_temporada == "Navideño" else LOGO_PATH
     if os.path.exists(logo_actual):
