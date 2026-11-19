@@ -84,7 +84,7 @@ if st.sidebar.button("🚪 Cerrar sesión"):
     st.rerun()
 
 runpy.run_path(
-    "EL_REY_RENT_A_CAR_diseno_premium.py",
+    "EL_REY_RENT_A_CAR_menu_movil.py",
     run_name="__main__"
 )
 
