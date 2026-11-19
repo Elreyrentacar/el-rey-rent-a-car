@@ -84,7 +84,7 @@ if st.sidebar.button("🚪 Cerrar sesión"):
     st.rerun()
 
 runpy.run_path(
-    ""el_rey_contratos_inspecciones_3d_premium_nueva_version.py",
+    "el_rey_contratos_inspecciones_3d_premium_nueva_version.py",
     run_name="__main__"
 )
 
